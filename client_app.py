@@ -1,13 +1,27 @@
-import requests
+# import requests
 import json
+import zmq
 
 from conf import *
 
 
 def send_request(json_data):
-    url = f'{SERVER_ADDRESS}:{SERVER_PORT}'
-    response = requests.post(url, json=json_data)
-    return response.json()
+    # url = f'{SERVER_ADDRESS}:{SERVER_PORT}'
+    # response = requests.post(url, json=json_data)
+    # return response.json()
+
+    context = zmq.Context()
+    socket = context.socket(zmq.REQ)
+    server_address = f"tcp://{SERVER_ADDRESS}:{SERVER_PORT}"
+    socket.connect(server_address)
+    json_data = json.dumps(json_data)
+    bytes_data = json_data.encode()
+    socket.send(bytes_data)
+    print('sent')
+    response = socket.recv().decode()
+    print(f"server response: {response}")
+    socket.close()
+    context.term()
 
 
 def json_file_reader():
@@ -15,7 +29,7 @@ def json_file_reader():
     try:
         with open(json_address, 'r') as json_file:
             data_json = json.load(json_file)
-            print(json.dumps(data_json, indent=4))
+            print(json.dumps(data_json))
             return data_json
     except FileNotFoundError:
         print(f"File not found: {json_address}")
@@ -48,8 +62,9 @@ def json_file_reader():
 def main():
     print('Request sender client app started')
     json_data = json_file_reader()
-    send_request(json_data)
-
+    if json_data:
+        send_request(json_data)
+# D:\Companies\graph\Project\Client\os_request.json
 
 # def main():
 #     print('Request sender client app started')
@@ -61,5 +76,5 @@ def main():
 #             print(response)
 
 
-if __name__== '__main__':
+if __name__ == '__main__':
     main()
